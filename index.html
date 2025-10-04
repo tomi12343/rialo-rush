@@ -8,28 +8,29 @@
 </head>
 <body>
   <div id="game-container">
-    <!-- Background Video -->
+    <!-- 🎥 Background -->
     <video id="bg-video" autoplay loop muted playsinline>
       <source src="assets/background.mp4" type="video/mp4" />
+      Your browser does not support the video tag.
     </video>
 
-    <!-- Game Canvas -->
+    <!-- 🎮 Game Canvas -->
     <canvas id="gameCanvas" width="960" height="540" tabindex="0"></canvas>
 
-    <!-- HUD -->
+    <!-- 🧭 HUD -->
     <div id="hud">
       <div id="score">Score: 0</div>
       <div id="highscore">High Score: 0</div>
     </div>
 
-    <!-- Start Overlay -->
+    <!-- 🟢 Start -->
     <div id="start" class="overlay">
       <h1>Rialo Rush</h1>
       <p>Move: ↑/↓ (Auto Shoot)</p>
       <button id="startBtn">Start</button>
     </div>
 
-    <!-- Game Over Overlay -->
+    <!-- 🔴 Game Over -->
     <div id="overlay" class="overlay hidden">
       <h1>GAME OVER</h1>
       <button id="restart">Restart</button>
