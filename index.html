@@ -9,7 +9,7 @@
 </head>
 <body>
   <div id="game-container">
-
+    
     <!-- 🎥 Background -->
     <video id="bg-video" autoplay loop muted playsinline>
       <source src="assets/background.mp4" type="video/mp4" />
@@ -25,31 +25,30 @@
       <div id="highscore">High Score: 0</div>
     </div>
 
-    <!-- 🟢 Start Overlay -->
+    <!-- 🟢 Start -->
     <div id="start" class="overlay">
       <h1>Rialo Rush</h1>
       <p>Gunakan ↑ / ↓ untuk bergerak (Auto Shoot)</p>
       <button id="startBtn">Start Game</button>
     </div>
 
-    <!-- 🔴 Game Over Overlay -->
+    <!-- 🔴 Game Over -->
     <div id="overlay" class="overlay hidden">
       <h1>GAME OVER</h1>
       <p>Your run is over!</p>
       <button id="restart">Restart</button>
     </div>
 
-    <!-- 🎮 On-screen Controls -->
+    <!-- 🎮 Controls -->
     <div id="mobile-controls">
-      <button id="btn-up" aria-label="Move Up">⬆️</button>
-      <button id="btn-down" aria-label="Move Down">⬇️</button>
+      <button id="btn-up">⬆️</button>
+      <button id="btn-down">⬇️</button>
     </div>
 
     <!-- 💬 Credit -->
     <div id="credit">by: saylireal</div>
 
   </div>
-
   <script src="script.js"></script>
 </body>
 </html>
