@@ -33,27 +33,37 @@ window.addEventListener("DOMContentLoaded", () => {
   let shootCooldown = 0;
   let spawnTimer = 0;
 
-  // ⚡ Level System
+  // ⚡ Difficulty Scaling
   let level = 1;
-  let speedMultiplier = 1; // musuh awal normal
+  let speedMultiplier = 1.0;
+  let maxEnemies = 4; // jumlah musuh awal
 
   const player = { x: 60, y: 380, w: 80, h: 80, speed: 6 };
   let bullets = [];
   let enemies = [];
 
   highText.textContent = `High Score: ${highScore}`;
+  levelText.textContent = `Level: 1`;
 
   // Controls
   const keys = {};
-  document.addEventListener("keydown", (e) => {
-    if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
-    keys[e.code] = true;
-  }, { passive: false });
+  document.addEventListener(
+    "keydown",
+    (e) => {
+      if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
+      keys[e.code] = true;
+    },
+    { passive: false }
+  );
 
-  document.addEventListener("keyup", (e) => {
-    if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
-    keys[e.code] = false;
-  }, { passive: false });
+  document.addEventListener(
+    "keyup",
+    (e) => {
+      if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
+      keys[e.code] = false;
+    },
+    { passive: false }
+  );
 
   function focusCanvas() {
     canvas.focus({ preventScroll: true });
@@ -61,14 +71,19 @@ window.addEventListener("DOMContentLoaded", () => {
 
   async function startGame() {
     startOverlay.classList.add("hidden");
-    try { await bgVideo.play(); } catch (_) {}
-    try { await bgMusic.play(); } catch (_) {}
+    try {
+      await bgVideo.play();
+    } catch (_) {}
+    try {
+      await bgMusic.play();
+    } catch (_) {}
 
     running = true;
     gameOver = false;
     score = 0;
     level = 1;
-    speedMultiplier = 1;
+    speedMultiplier = 1.0;
+    maxEnemies = 4;
 
     bullets = [];
     enemies.forEach((e) => e.el.remove());
@@ -107,7 +122,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // 🐦 Spawn Enemy (GIF)
   function spawnEnemy() {
-    if (enemies.length > 8) return;
+    if (enemies.length >= maxEnemies) return; // batasi jumlah musuh
     const y = Math.random() * (canvas.height - 100);
     const baseSpeed = 2 + Math.random() * 2;
     const speed = baseSpeed * speedMultiplier;
@@ -125,34 +140,40 @@ window.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // 🕹️ Update
+  // 🕹️ Update Game Logic
   function update() {
     if (!running || gameOver) return;
 
+    // Gerak Player
     if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
-    if (keys["ArrowDown"] && player.y + player.h < canvas.height) player.y += player.speed;
+    if (keys["ArrowDown"] && player.y + player.h < canvas.height)
+      player.y += player.speed;
 
+    // Auto Shoot
     if (shootCooldown <= 0) {
       shoot();
       shootCooldown = 12;
     }
     shootCooldown--;
 
+    // Bullets
     bullets.forEach((b) => (b.x += b.speed));
     bullets = bullets.filter((b) => b.x < canvas.width + 50);
 
+    // Spawn Musuh
     spawnTimer--;
     if (spawnTimer <= 0) {
       spawnEnemy();
       spawnTimer = 90 + Math.random() * 60;
     }
 
+    // Update posisi musuh
     enemies.forEach((e) => {
       e.x -= e.speed;
       e.el.style.left = `${e.x}px`;
     });
 
-    // Collision
+    // Collision Detection
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
       if (collide(player, e)) return endGame();
@@ -166,20 +187,25 @@ window.addEventListener("DOMContentLoaded", () => {
           score++;
           scoreText.textContent = `Score: ${score}`;
 
-          // 🎯 Level Up
-          if (score % 100 === 0) {
+          // ⚡ Difficulty Scaling tiap 10 skor
+          if (score % 10 === 0) {
             level++;
-            speedMultiplier += 0.15;
+            speedMultiplier += 0.1; // tambah 10% kecepatan
+            maxEnemies += 1; // tambah musuh maksimal
             levelText.textContent = `Level: ${level}`;
             levelUpSound.currentTime = 0;
             levelUpSound.play().catch(() => {});
-            console.log(`⚡ Level ${level} → speed x${speedMultiplier.toFixed(2)}`);
+            console.log(
+              `⚡ Level ${level} | Speed x${speedMultiplier.toFixed(
+                2
+              )} | MaxEnemies ${maxEnemies}`
+            );
           }
-
           break;
         }
       }
 
+      // Hapus musuh keluar layar
       if (e.x + e.w < 0) {
         e.el.remove();
         enemies.splice(i, 1);
@@ -187,10 +213,17 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // 🧱 Collision Box
   function collide(a, b) {
-    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    return (
+      a.x < b.x + b.w &&
+      a.x + a.w > b.x &&
+      a.y < b.y + b.h &&
+      a.y + a.h > b.y
+    );
   }
 
+  // 🔴 Game Over
   function endGame() {
     gameOver = true;
     running = false;
@@ -206,15 +239,16 @@ window.addEventListener("DOMContentLoaded", () => {
     highText.textContent = `High Score: ${highScore}`;
   }
 
-  // 🎨 Draw
+  // 🎨 Draw Player & Bullets
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (playerImg.complete) ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+    if (playerImg.complete)
+      ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
     ctx.fillStyle = "#ff3333";
     bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
   }
 
-  // 🔁 Loop
+  // 🔁 Main Loop
   function loop() {
     update();
     draw();
