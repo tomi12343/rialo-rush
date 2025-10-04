@@ -1,49 +1,50 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Rialo Rush</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <div id="game-container">
-    <!-- 🎥 Background -->
-    <video id="bg-video" autoplay loop muted playsinline>
-      <source src="assets/background.mp4" type="video/mp4" />
-    </video>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rialo Rush</title>
+    <link rel="icon" href="assets/player.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div id="game-container">
+      <!-- 🎥 Background -->
+      <video id="bg-video" autoplay loop muted playsinline>
+        <source src="assets/background.mp4" type="video/mp4" />
+      </video>
 
-    <!-- 🎮 Canvas -->
-    <canvas id="gameCanvas" width="960" height="540" tabindex="0"></canvas>
+      <!-- 🎮 Canvas -->
+      <canvas id="gameCanvas" width="960" height="540" tabindex="0"></canvas>
 
-    <!-- 🧭 HUD -->
-    <div id="hud">
-      <div id="score">Score: 0</div>
-      <div id="level">Level: 1</div>
-      <div id="highscore">High Score: 0</div>
+      <!-- 🧭 HUD -->
+      <div id="hud">
+        <div id="score">Score: 0</div>
+        <div id="level">Level: 1</div>
+        <div id="highscore">High Score: 0</div>
+      </div>
+
+      <!-- 🟢 Start Overlay -->
+      <div id="start" class="overlay">
+        <h1>Rialo Rush</h1>
+        <p>Gunakan ↑ / ↓ untuk bergerak (Auto Shoot)</p>
+        <button id="startBtn">Start Game</button>
+      </div>
+
+      <!-- 🔴 Game Over Overlay -->
+      <div id="overlay" class="overlay hidden">
+        <h1>GAME OVER</h1>
+        <p>Your run is over!</p>
+        <button id="restart">Restart</button>
+      </div>
+
+      <!-- 🎮 On-screen Controls (PC & HP) -->
+      <div id="mobile-controls">
+        <button id="btn-up" aria-label="Move Up">⬆️</button>
+        <button id="btn-down" aria-label="Move Down">⬇️</button>
+      </div>
     </div>
 
-    <!-- 🟢 Start Overlay -->
-    <div id="start" class="overlay">
-      <h1>Rialo Rush</h1>
-      <p>Move: ↑/↓ (Auto Shoot)</p>
-      <button id="startBtn">Start Game</button>
-    </div>
-
-    <!-- 🔴 Game Over Overlay -->
-    <div id="overlay" class="overlay hidden">
-      <h1>GAME OVER</h1>
-      <p>Your run is over!</p>
-      <button id="restart">Restart</button>
-    </div>
-
-    <!-- 🎮 Mobile Controls -->
-    <div id="mobile-controls" class="hidden">
-      <button id="btn-up">⬆️</button>
-      <button id="btn-down">⬇️</button>
-    </div>
-  </div>
-
-  <script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>
