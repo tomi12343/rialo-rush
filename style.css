@@ -1,5 +1,9 @@
 * { box-sizing: border-box; }
-html, body { height: 100%; margin: 0; padding: 0; }
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
 body {
   display: flex;
   justify-content: center;
@@ -28,7 +32,7 @@ body {
   object-fit: cover;
   filter: brightness(0.9);
   z-index: 0;
-  pointer-events: none;
+  pointer-events: none; /* biar klik tembus ke tombol */
 }
 
 /* 🎮 Canvas */
@@ -68,8 +72,12 @@ canvas {
   text-align: center;
   padding: 16px;
 }
-.overlay h1 { font-size: 40px; margin: 0; }
+.overlay h1 {
+  font-size: 40px;
+  margin: 0;
+}
 .overlay p { opacity: 0.9; margin: 0 0 6px 0; }
+
 button {
   padding: 10px 20px;
   font-size: 16px;
@@ -79,6 +87,9 @@ button {
   color: #000;
   border-radius: 6px;
   font-weight: bold;
+}
+button:active {
+  transform: scale(0.96);
 }
 .hidden { display: none; }
 
@@ -92,15 +103,16 @@ button {
   pointer-events: none;
 }
 
-/* 📱 Mobile Controls */
+/* 📱 On-screen Controls (PC & HP) */
 #mobile-controls {
   position: absolute;
   bottom: 20px;
   right: 20px;
-  z-index: 10;
+  z-index: 99; /* di atas canvas dan overlay */
   display: flex;
   flex-direction: column;
   gap: 12px;
+  pointer-events: auto;
 }
 
 #mobile-controls button {
@@ -109,21 +121,22 @@ button {
   border: none;
   border-radius: 50%;
   font-size: 24px;
-  background: rgba(255,255,255,0.8);
+  background: rgba(255,255,255,0.9);
   color: #000;
   font-weight: bold;
   cursor: pointer;
   box-shadow: 0 4px 6px rgba(0,0,0,0.4);
+  pointer-events: auto;
+  touch-action: manipulation; /* hilangkan delay tap di HP */
 }
 
 #mobile-controls button:active {
-  transform: scale(0.9);
+  transform: scale(0.92);
   background: #00ff88;
 }
 
-/* Tampilkan kontrol di layar kecil / potret */
+/* Responsif */
 @media (max-width: 768px), (orientation: portrait) {
-  #mobile-controls { display: flex; }
   #game-container {
     width: 100vw;
     height: 100vh;
