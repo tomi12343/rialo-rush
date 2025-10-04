@@ -25,38 +25,31 @@ window.addEventListener("DOMContentLoaded", () => {
   const levelUpSound = new Audio("assets/levelup.wav");
   levelUpSound.volume = 0.8;
 
-  // Game State
-  let running = false;
-  let gameOver = false;
-  let score = 0;
-  let highScore = Number(localStorage.getItem("rialo_high") || 0);
-
-  let level = 1;
-  let speedMultiplier = 1.0;
-  let enemiesPerSpawn = 3;
+  // State
+  let running = false, gameOver = false;
+  let score = 0, highScore = Number(localStorage.getItem("rialo_high") || 0);
+  let level = 1, speedMultiplier = 1.0, enemiesPerSpawn = 3;
   const spawnInterval = 60;
-  let spawnTimer = spawnInterval;
-  let shootCooldown = 0;
+  let spawnTimer = spawnInterval, shootCooldown = 0;
 
   const player = { x: 60, y: 380, w: 80, h: 80, speed: 6 };
-  let bullets = [];
-  let enemies = [];
+  let bullets = [], enemies = [];
 
   highText.textContent = `High Score: ${highScore}`;
   levelText.textContent = `Level: ${level}`;
 
-  // Controls
+  // Keyboard Controls
   const keys = {};
-  document.addEventListener("keydown", (e) => {
+  document.addEventListener("keydown", e => {
     if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
     keys[e.code] = true;
   });
-  document.addEventListener("keyup", (e) => {
+  document.addEventListener("keyup", e => {
     if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
     keys[e.code] = false;
   });
 
-  // 🕹️ On-screen Buttons
+  // 🎮 Simple On-screen Buttons
   const btnUp = document.getElementById("btn-up");
   const btnDown = document.getElementById("btn-down");
 
@@ -67,33 +60,26 @@ window.addEventListener("DOMContentLoaded", () => {
   btnUp.addEventListener("mousedown", () => activateKey("ArrowUp"));
   btnUp.addEventListener("mouseup", () => deactivateKey("ArrowUp"));
   btnUp.addEventListener("mouseleave", () => deactivateKey("ArrowUp"));
-  btnUp.addEventListener("touchstart", (e) => { e.preventDefault(); activateKey("ArrowUp"); });
-  btnUp.addEventListener("touchend", (e) => { e.preventDefault(); deactivateKey("ArrowUp"); });
+  btnUp.addEventListener("touchstart", e => { e.preventDefault(); activateKey("ArrowUp"); });
+  btnUp.addEventListener("touchend", e => { e.preventDefault(); deactivateKey("ArrowUp"); });
 
   // DOWN
   btnDown.addEventListener("mousedown", () => activateKey("ArrowDown"));
   btnDown.addEventListener("mouseup", () => deactivateKey("ArrowDown"));
   btnDown.addEventListener("mouseleave", () => deactivateKey("ArrowDown"));
-  btnDown.addEventListener("touchstart", (e) => { e.preventDefault(); activateKey("ArrowDown"); });
-  btnDown.addEventListener("touchend", (e) => { e.preventDefault(); deactivateKey("ArrowDown"); });
+  btnDown.addEventListener("touchstart", e => { e.preventDefault(); activateKey("ArrowDown"); });
+  btnDown.addEventListener("touchend", e => { e.preventDefault(); deactivateKey("ArrowDown"); });
 
-  // 🎮 Start
+  // 🎮 Start Game
   async function startGame() {
     startOverlay.classList.add("hidden");
-    try { await bgVideo.play(); } catch(_) {}
-    try { await bgMusic.play(); } catch(_) {}
-
+    try { await bgVideo.play(); } catch (_) {}
+    try { await bgMusic.play(); } catch (_) {}
     running = true; gameOver = false;
-    score = 0; level = 1;
-    speedMultiplier = 1.0;
-    enemiesPerSpawn = 3;
-    bullets = [];
-    enemies.forEach(e => e.el.remove());
-    enemies = [];
-    shootCooldown = 0;
-    spawnTimer = spawnInterval;
-    scoreText.textContent = "Score: 0";
-    levelText.textContent = `Level: ${level}`;
+    score = 0; level = 1; speedMultiplier = 1.0; enemiesPerSpawn = 3;
+    bullets = []; enemies.forEach(e => e.el.remove()); enemies = [];
+    shootCooldown = 0; spawnTimer = spawnInterval;
+    scoreText.textContent = "Score: 0"; levelText.textContent = `Level: ${level}`;
   }
 
   startBtn.addEventListener("click", startGame);
@@ -104,16 +90,11 @@ window.addEventListener("DOMContentLoaded", () => {
     startGame();
   });
 
-  // 🔫 Auto Shoot
+  // 🔫 Auto Shooting
   function shoot() {
-    bullets.push({
-      x: player.x + player.w,
-      y: player.y + player.h / 2 - 3,
-      w: 18, h: 6, speed: 12
-    });
+    bullets.push({ x: player.x + player.w, y: player.y + player.h / 2 - 3, w: 18, h: 6, speed: 12 });
     const sfx = new Audio(gunSoundSrc);
-    sfx.volume = 0.7;
-    sfx.play().catch(() => {});
+    sfx.volume = 0.7; sfx.play().catch(() => {});
   }
 
   // 🐦 Spawn Enemies
@@ -124,46 +105,41 @@ window.addEventListener("DOMContentLoaded", () => {
       const img = new Image();
       img.src = "assets/enemy-bird.gif";
       img.className = "enemy-sprite";
-      img.style.top = `${y}px`;
-      img.style.left = `${canvas.width}px`;
+      img.style.top = `${y}px`; img.style.left = `${canvas.width}px`;
       container.appendChild(img);
       enemies.push({ x: canvas.width, y, w: 60, h: 60, speed, el: img });
     }
   }
 
   function levelUp() {
-    level++;
-    enemiesPerSpawn += 3;
-    speedMultiplier += 0.1;
+    level++; enemiesPerSpawn += 3; speedMultiplier += 0.1;
     levelText.textContent = `Level: ${level}`;
-    levelUpSound.currentTime = 0;
-    levelUpSound.play().catch(() => {});
+    levelUpSound.currentTime = 0; levelUpSound.play().catch(() => {});
   }
 
-  // 🕹️ Update
   function update() {
     if (!running || gameOver) return;
 
+    // Move
     if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
     if (keys["ArrowDown"] && player.y + player.h < canvas.height) player.y += player.speed;
 
+    // Shoot
     if (shootCooldown <= 0) { shoot(); shootCooldown = 12; }
     shootCooldown--;
 
+    // Bullets
     bullets.forEach(b => b.x += b.speed);
     bullets = bullets.filter(b => b.x < canvas.width + 50);
 
+    // Spawn Enemies
     spawnTimer--;
-    if (spawnTimer <= 0) {
-      spawnEnemiesGroup(enemiesPerSpawn);
-      spawnTimer = spawnInterval;
-    }
+    if (spawnTimer <= 0) { spawnEnemiesGroup(enemiesPerSpawn); spawnTimer = spawnInterval; }
 
-    enemies.forEach(e => {
-      e.x -= e.speed;
-      e.el.style.left = `${e.x}px`;
-    });
+    // Move Enemies
+    enemies.forEach(e => { e.x -= e.speed; e.el.style.left = `${e.x}px`; });
 
+    // Collisions
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
       if (collide(player, e)) return endGame();
@@ -171,11 +147,8 @@ window.addEventListener("DOMContentLoaded", () => {
       for (let j = bullets.length - 1; j >= 0; j--) {
         const b = bullets[j];
         if (collide(b, e)) {
-          e.el.remove();
-          enemies.splice(i, 1);
-          bullets.splice(j, 1);
-          score++;
-          scoreText.textContent = `Score: ${score}`;
+          e.el.remove(); enemies.splice(i, 1); bullets.splice(j, 1);
+          score++; scoreText.textContent = `Score: ${score}`;
           if (score % 5 === 0) levelUp();
           break;
         }
@@ -191,29 +164,17 @@ window.addEventListener("DOMContentLoaded", () => {
   function endGame() {
     gameOver = true; running = false;
     overlay.classList.remove("hidden");
-    enemies.forEach(e => e.el.remove());
-    enemies = [];
-    bgMusic.pause();
-
-    if (score > highScore) {
-      highScore = score;
-      localStorage.setItem("rialo_high", String(highScore));
-    }
+    enemies.forEach(e => e.el.remove()); enemies = []; bgMusic.pause();
+    if (score > highScore) { highScore = score; localStorage.setItem("rialo_high", String(highScore)); }
     highText.textContent = `High Score: ${highScore}`;
   }
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
-    ctx.fillStyle = "#ff3333";
-    bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
+    ctx.fillStyle = "#ff3333"; bullets.forEach(b => ctx.fillRect(b.x, b.y, b.w, b.h));
   }
 
-  function loop() {
-    update();
-    draw();
-    requestAnimationFrame(loop);
-  }
-
+  function loop() { update(); draw(); requestAnimationFrame(loop); }
   loop();
 });
