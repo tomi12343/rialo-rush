@@ -7,108 +7,146 @@ playerImg.src = "assets/player.png";
 const enemyImg = new Image();
 enemyImg.src = "assets/enemy.png";
 
-let player = { x: 50, y: 300, width: 50, height: 50, speed: 5 };
+let player = { x: 60, y: 380, w: 80, h: 80, speed: 6 };
 let bullets = [];
 let enemies = [];
 let score = 0;
-let highScore = localStorage.getItem("highscore") || 0;
+let highScore = localStorage.getItem("rialo_high") || 0;
 let gameOver = false;
+let shootCooldown = 0;
+let spawnTimer = 0;
 
-const scoreDisplay = document.getElementById("score");
-const highscoreDisplay = document.getElementById("highscore");
-const gameOverScreen = document.getElementById("game-over");
-const restartBtn = document.getElementById("restart-btn");
+const scoreText = document.getElementById("score");
+const highText = document.getElementById("highscore");
+const overlay = document.getElementById("overlay");
+const restartBtn = document.getElementById("restart");
 
-highscoreDisplay.textContent = `High Score: ${highScore}`;
+highText.textContent = `High Score: ${highScore}`;
 
-document.addEventListener("keydown", movePlayer);
-document.addEventListener("keydown", shoot);
+const keys = {};
 
-function movePlayer(e) {
-  if (gameOver) return;
-  if (e.key === "ArrowUp" && player.y > 0) player.y -= player.speed;
-  if (e.key === "ArrowDown" && player.y + player.height < canvas.height) player.y += player.speed;
-}
-
-function shoot(e) {
-  if (gameOver) return;
-  if (e.code === "Space") {
-    bullets.push({ x: player.x + player.width, y: player.y + player.height / 2, width: 10, height: 4 });
-  }
-}
+document.addEventListener("keydown", (e) => (keys[e.key] = true));
+document.addEventListener("keyup", (e) => (keys[e.key] = false));
 
 function spawnEnemy() {
-  if (gameOver) return;
-  let y = Math.random() * (canvas.height - 40);
-  enemies.push({ x: canvas.width, y: y, width: 40, height: 40, speed: 2 + Math.random() * 2 });
+  const y = Math.random() * (canvas.height - 100);
+  const speed = 3 + Math.random() * 2;
+  enemies.push({ x: canvas.width + 40, y, w: 60, h: 60, speed });
+}
+
+function shoot() {
+  bullets.push({
+    x: player.x + player.w,
+    y: player.y + player.h / 2 - 4,
+    w: 20,
+    h: 8,
+    speed: 10,
+  });
 }
 
 function update() {
   if (gameOver) return;
 
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(playerImg, player.x, player.y, player.width, player.height);
+  // player movement
+  if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
+  if (keys["ArrowDown"] && player.y + player.h < canvas.height)
+    player.y += player.speed;
 
-  // Draw bullets
-  bullets.forEach((b, i) => {
-    b.x += 6;
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(b.x, b.y, b.width, b.height);
-    if (b.x > canvas.width) bullets.splice(i, 1);
-  });
+  // shooting
+  if (keys[" "] && shootCooldown <= 0) {
+    shoot();
+    shootCooldown = 10;
+  }
+  shootCooldown--;
 
-  // Draw enemies
-  enemies.forEach((enemy, i) => {
-    enemy.x -= enemy.speed;
-    ctx.drawImage(enemyImg, enemy.x, enemy.y, enemy.width, enemy.height);
+  // update bullets
+  bullets.forEach((b) => (b.x += b.speed));
+  bullets = bullets.filter((b) => b.x < canvas.width + 50);
 
-    // Collision with player
-    if (checkCollision(player, enemy)) {
-      endGame();
+  // spawn enemies
+  spawnTimer--;
+  if (spawnTimer <= 0) {
+    spawnEnemy();
+    spawnTimer = 60 + Math.random() * 60;
+  }
+
+  // update enemies
+  enemies.forEach((e) => (e.x -= e.speed));
+
+  // collisions
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+
+    // check player collision
+    if (collide(player, e)) {
+      return endGame();
     }
 
-    // Collision with bullets
-    bullets.forEach((b, j) => {
-      if (checkCollision(b, enemy)) {
+    // check bullets
+    for (let j = bullets.length - 1; j >= 0; j--) {
+      const b = bullets[j];
+      if (collide(b, e)) {
         enemies.splice(i, 1);
         bullets.splice(j, 1);
         score++;
-        scoreDisplay.textContent = `Score: ${score}`;
+        scoreText.textContent = `Score: ${score}`;
+        break;
       }
-    });
+    }
 
-    if (enemy.x + enemy.width < 0) enemies.splice(i, 1);
-  });
-
-  requestAnimationFrame(update);
+    // remove off-screen
+    if (e.x + e.w < 0) enemies.splice(i, 1);
+  }
 }
 
-function checkCollision(a, b) {
-  return a.x < b.x + b.width &&
-         a.x + a.width > b.x &&
-         a.y < b.y + b.height &&
-         a.y + a.height > b.y;
+function collide(a, b) {
+  return (
+    a.x < b.x + b.w &&
+    a.x + a.w > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.h > b.y
+  );
 }
 
 function endGame() {
   gameOver = true;
-  gameOverScreen.classList.remove("hidden");
+  overlay.classList.remove("hidden");
+
   if (score > highScore) {
     highScore = score;
-    localStorage.setItem("highscore", highScore);
+    localStorage.setItem("rialo_high", highScore);
   }
+  highText.textContent = `High Score: ${highScore}`;
 }
 
 restartBtn.addEventListener("click", () => {
   score = 0;
-  scoreDisplay.textContent = "Score: 0";
-  gameOver = false;
-  gameOverScreen.classList.add("hidden");
-  enemies = [];
   bullets = [];
-  player.y = 300;
-  update();
+  enemies = [];
+  player.y = 380;
+  gameOver = false;
+  overlay.classList.add("hidden");
+  scoreText.textContent = "Score: 0";
 });
 
-setInterval(spawnEnemy, 1500);
-update();
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // draw player
+  ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+
+  // draw bullets
+  ctx.fillStyle = "#ffcc00";
+  bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
+
+  // draw enemies
+  enemies.forEach((e) => ctx.drawImage(enemyImg, e.x, e.y, e.w, e.h));
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
