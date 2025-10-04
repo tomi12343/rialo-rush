@@ -25,23 +25,25 @@ window.addEventListener("DOMContentLoaded", () => {
   const levelUpSound = new Audio("assets/levelup.wav");
   levelUpSound.volume = 0.8;
 
-  // Game State
+  // State
   let running = false;
   let gameOver = false;
   let score = 0;
   let highScore = Number(localStorage.getItem("rialo_high") || 0);
-  let shootCooldown = 0;
-  let spawnTimer = 0;
 
-  // ⚡ Difficulty
+  // Spawn & Level
   let level = 1;
   let speedMultiplier = 1.0;
-  let maxEnemies = 3; // awal 3 musuh
+  let enemiesPerSpawn = 3; // awal 3 musuh tiap detik
+  let spawnInterval = 60; // setiap detik (60fps)
+  let spawnTimer = spawnInterval;
 
+  // Entities
   const player = { x: 60, y: 380, w: 80, h: 80, speed: 6 };
   let bullets = [];
   let enemies = [];
 
+  // UI init
   highText.textContent = `High Score: ${highScore}`;
   levelText.textContent = `Level: ${level}`;
 
@@ -70,12 +72,11 @@ window.addEventListener("DOMContentLoaded", () => {
     score = 0;
     level = 1;
     speedMultiplier = 1.0;
-    maxEnemies = 3;
+    enemiesPerSpawn = 3;
+
     bullets = [];
     enemies.forEach((e) => e.el.remove());
     enemies = [];
-    shootCooldown = 0;
-    spawnTimer = 0;
 
     scoreText.textContent = "Score: 0";
     levelText.textContent = `Level: ${level}`;
@@ -92,6 +93,7 @@ window.addEventListener("DOMContentLoaded", () => {
   });
 
   // 🔫 Auto Shooting
+  let shootCooldown = 0;
   function shoot() {
     bullets.push({
       x: player.x + player.w,
@@ -105,24 +107,35 @@ window.addEventListener("DOMContentLoaded", () => {
     sfx.play().catch(() => {});
   }
 
-  // 🐦 Spawn Enemy
-  function spawnEnemy() {
-    if (enemies.length >= maxEnemies) return;
-    const y = Math.random() * (canvas.height - 100);
-    const baseSpeed = 2 + Math.random() * 2;
-    const speed = baseSpeed * speedMultiplier;
+  // 🐦 Spawn Enemies (group)
+  function spawnEnemiesGroup(count) {
+    for (let i = 0; i < count; i++) {
+      const y = Math.random() * (canvas.height - 100);
+      const baseSpeed = 2 + Math.random() * 2;
+      const speed = baseSpeed * speedMultiplier;
 
-    const img = new Image();
-    img.src = "assets/enemy-bird.gif";
-    img.alt = "enemy";
-    img.className = "enemy-sprite";
-    img.style.top = `${y}px`;
-    img.style.left = `${canvas.width}px`;
+      const img = new Image();
+      img.src = "assets/enemy-bird.gif";
+      img.className = "enemy-sprite";
+      img.style.top = `${y}px`;
+      img.style.left = `${canvas.width}px`;
 
-    img.onload = () => {
-      container.appendChild(img);
-      enemies.push({ x: canvas.width, y, w: 60, h: 60, speed, el: img });
-    };
+      img.onload = () => {
+        container.appendChild(img);
+        enemies.push({ x: canvas.width, y, w: 60, h: 60, speed, el: img });
+      };
+    }
+  }
+
+  // ⚡ Level Up logic
+  function levelUp() {
+    level++;
+    enemiesPerSpawn += 3; // tambah 3 musuh per spawn
+    speedMultiplier += 0.1; // makin cepat
+    levelText.textContent = `Level: ${level}`;
+    levelUpSound.currentTime = 0;
+    levelUpSound.play().catch(() => {});
+    console.log(`🔥 Level ${level} | ${enemiesPerSpawn} musuh/spawn | Speed x${speedMultiplier.toFixed(2)}`);
   }
 
   // 🕹️ Update
@@ -145,20 +158,20 @@ window.addEventListener("DOMContentLoaded", () => {
     bullets.forEach((b) => (b.x += b.speed));
     bullets = bullets.filter((b) => b.x < canvas.width + 50);
 
-    // Spawn Musuh
+    // Spawn tiap detik
     spawnTimer--;
     if (spawnTimer <= 0) {
-      spawnEnemy();
-      spawnTimer = 80 + Math.random() * 40;
+      spawnEnemiesGroup(enemiesPerSpawn);
+      spawnTimer = spawnInterval;
     }
 
-    // Gerak Musuh
+    // Gerak musuh
     enemies.forEach((e) => {
       e.x -= e.speed;
       e.el.style.left = `${e.x}px`;
     });
 
-    // Collision Check
+    // Collision
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
       if (collide(player, e)) return endGame();
@@ -172,25 +185,13 @@ window.addEventListener("DOMContentLoaded", () => {
           score++;
           scoreText.textContent = `Score: ${score}`;
 
-          // ⚡ Level up tiap kelipatan 5
-          if (score % 5 === 0) {
-            level++;
-            speedMultiplier += 0.1;
-            maxEnemies += 3;
-            levelText.textContent = `Level: ${level}`;
-            levelUpSound.currentTime = 0;
-            levelUpSound.play().catch(() => {});
-            console.log(
-              `🔥 Level ${level}: speed x${speedMultiplier.toFixed(
-                2
-              )}, maxEnemies ${maxEnemies}`
-            );
-          }
-
+          // Level Up tiap kelipatan 5
+          if (score % 5 === 0) levelUp();
           break;
         }
       }
 
+      // Musuh keluar layar
       if (e.x + e.w < 0) {
         e.el.remove();
         enemies.splice(i, 1);
@@ -198,6 +199,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // 🔲 Collision Check
   function collide(a, b) {
     return (
       a.x < b.x + b.w &&
@@ -207,6 +209,7 @@ window.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  // 💀 Game Over
   function endGame() {
     gameOver = true;
     running = false;
@@ -222,6 +225,7 @@ window.addEventListener("DOMContentLoaded", () => {
     highText.textContent = `High Score: ${highScore}`;
   }
 
+  // 🎨 Draw
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (playerImg.complete)
@@ -230,6 +234,7 @@ window.addEventListener("DOMContentLoaded", () => {
     bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
   }
 
+  // 🔁 Loop
   function loop() {
     update();
     draw();
