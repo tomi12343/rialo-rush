@@ -68,6 +68,7 @@ canvas {
 }
 .overlay h1 { font-size: 40px; margin: 0; }
 .overlay p { opacity: 0.9; margin: 0 0 6px 0; }
+
 button {
   padding: 10px 20px;
   font-size: 16px;
@@ -78,14 +79,16 @@ button {
   border-radius: 6px;
   font-weight: bold;
 }
+
 .hidden { display: none; }
 
-/* 🐦 Enemy Video */
-.enemy-video {
+/* 🐦 Enemy GIF Sprite */
+.enemy-sprite {
   position: absolute;
   z-index: 2;
   width: 60px;
   height: 60px;
   object-fit: contain;
+  image-rendering: pixelated;
   pointer-events: none;
 }
