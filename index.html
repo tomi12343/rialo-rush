@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Rialo Rush</title>
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -10,11 +10,11 @@
   <div id="game-container">
     <!-- Background Video -->
     <video id="bg-video" autoplay loop muted playsinline>
-      <source src="assets/animation.gif.mp4" type="video/mp4">
+      <source src="assets/animation.gif.mp4" type="video/mp4" />
     </video>
 
     <!-- Game Canvas -->
-    <canvas id="gameCanvas" width="960" height="540"></canvas>
+    <canvas id="gameCanvas" width="960" height="540" tabindex="0"></canvas>
 
     <!-- HUD -->
     <div id="hud">
@@ -22,8 +22,15 @@
       <div id="highscore">High Score: 0</div>
     </div>
 
-    <!-- Overlay Game Over -->
-    <div id="overlay" class="hidden">
+    <!-- Start Overlay -->
+    <div id="start" class="overlay">
+      <h1>Rialo Rush</h1>
+      <p>Move: ↑/↓ • Shoot: Space</p>
+      <button id="startBtn">Start</button>
+    </div>
+
+    <!-- Game Over Overlay -->
+    <div id="overlay" class="overlay hidden">
       <h1>GAME OVER</h1>
       <button id="restart">Restart</button>
     </div>
