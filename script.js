@@ -6,6 +6,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // UI
   const scoreText = document.getElementById("score");
+  const levelText = document.getElementById("level");
   const highText = document.getElementById("highscore");
   const startOverlay = document.getElementById("start");
   const startBtn = document.getElementById("startBtn");
@@ -21,8 +22,10 @@ window.addEventListener("DOMContentLoaded", () => {
   bgMusic.volume = 0.6;
 
   const gunSoundSrc = "assets/gun.wav";
+  const levelUpSound = new Audio("assets/levelup.wav");
+  levelUpSound.volume = 0.8;
 
-  // State
+  // Game State
   let running = false;
   let gameOver = false;
   let score = 0;
@@ -30,12 +33,17 @@ window.addEventListener("DOMContentLoaded", () => {
   let shootCooldown = 0;
   let spawnTimer = 0;
 
+  // ⚡ Level System
+  let level = 1;
+  let speedMultiplier = 1; // musuh awal normal
+
   const player = { x: 60, y: 380, w: 80, h: 80, speed: 6 };
   let bullets = [];
   let enemies = [];
 
   highText.textContent = `High Score: ${highScore}`;
 
+  // Controls
   const keys = {};
   document.addEventListener("keydown", (e) => {
     if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
@@ -59,12 +67,18 @@ window.addEventListener("DOMContentLoaded", () => {
     running = true;
     gameOver = false;
     score = 0;
+    level = 1;
+    speedMultiplier = 1;
+
     bullets = [];
     enemies.forEach((e) => e.el.remove());
     enemies = [];
     shootCooldown = 0;
     spawnTimer = 0;
+
     scoreText.textContent = "Score: 0";
+    levelText.textContent = "Level: 1";
+    highText.textContent = `High Score: ${highScore}`;
     focusCanvas();
   }
 
@@ -85,55 +99,54 @@ window.addEventListener("DOMContentLoaded", () => {
       h: 6,
       speed: 12,
     });
+
     const sfx = new Audio(gunSoundSrc);
     sfx.volume = 0.7;
     sfx.play().catch(() => {});
   }
 
-  // 🐦 Spawn Musuh (GIF)
+  // 🐦 Spawn Enemy (GIF)
   function spawnEnemy() {
-    if (enemies.length > 6) return; // limit biar gak berat
+    if (enemies.length > 8) return;
     const y = Math.random() * (canvas.height - 100);
-    const speed = 2 + Math.random() * 2;
+    const baseSpeed = 2 + Math.random() * 2;
+    const speed = baseSpeed * speedMultiplier;
 
-    const el = document.createElement("img");
-    el.src = "assets/enemy-bird.gif";
-    el.alt = "enemy-bird";
-    el.draggable = false;
-    el.className = "enemy-sprite";
-    el.style.top = `${y}px`;
-    el.style.left = `${canvas.width}px`;
-    container.appendChild(el);
+    const img = new Image();
+    img.src = "assets/enemy-bird.gif";
+    img.alt = "enemy-bird";
+    img.className = "enemy-sprite";
+    img.style.top = `${y}px`;
+    img.style.left = `${canvas.width}px`;
 
-    enemies.push({ x: canvas.width, y, w: 60, h: 60, speed, el });
+    img.onload = () => {
+      container.appendChild(img);
+      enemies.push({ x: canvas.width, y, w: 60, h: 60, speed, el: img });
+    };
   }
 
+  // 🕹️ Update
   function update() {
     if (!running || gameOver) return;
 
-    // Gerak Player
     if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
     if (keys["ArrowDown"] && player.y + player.h < canvas.height) player.y += player.speed;
 
-    // Auto shoot
     if (shootCooldown <= 0) {
       shoot();
       shootCooldown = 12;
     }
     shootCooldown--;
 
-    // Peluru
     bullets.forEach((b) => (b.x += b.speed));
     bullets = bullets.filter((b) => b.x < canvas.width + 50);
 
-    // Spawn musuh
     spawnTimer--;
     if (spawnTimer <= 0) {
       spawnEnemy();
       spawnTimer = 90 + Math.random() * 60;
     }
 
-    // Update posisi musuh
     enemies.forEach((e) => {
       e.x -= e.speed;
       e.el.style.left = `${e.x}px`;
@@ -152,6 +165,17 @@ window.addEventListener("DOMContentLoaded", () => {
           bullets.splice(j, 1);
           score++;
           scoreText.textContent = `Score: ${score}`;
+
+          // 🎯 Level Up
+          if (score % 100 === 0) {
+            level++;
+            speedMultiplier += 0.15;
+            levelText.textContent = `Level: ${level}`;
+            levelUpSound.currentTime = 0;
+            levelUpSound.play().catch(() => {});
+            console.log(`⚡ Level ${level} → speed x${speedMultiplier.toFixed(2)}`);
+          }
+
           break;
         }
       }
@@ -164,12 +188,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function collide(a, b) {
-    return (
-      a.x < b.x + b.w &&
-      a.x + a.w > b.x &&
-      a.y < b.y + b.h &&
-      a.y + a.h > b.y
-    );
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   }
 
   function endGame() {
@@ -187,6 +206,7 @@ window.addEventListener("DOMContentLoaded", () => {
     highText.textContent = `High Score: ${highScore}`;
   }
 
+  // 🎨 Draw
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (playerImg.complete) ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
@@ -194,11 +214,11 @@ window.addEventListener("DOMContentLoaded", () => {
     bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
   }
 
+  // 🔁 Loop
   function loop() {
     update();
     draw();
     requestAnimationFrame(loop);
   }
-
   loop();
 });
