@@ -19,19 +19,19 @@ body {
   box-shadow: 0 0 20px rgba(0,0,0,0.6);
 }
 
-/* Background Video */
+/* 🎥 Background Video */
 #bg-video {
   position: absolute;
-  inset: 0;
+  top: 0; left: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   z-index: 0;
-  /* opsional biar objek game lebih kontras */
   filter: brightness(0.85);
+  pointer-events: none;
 }
 
-/* Game Canvas */
+/* 🎮 Canvas */
 canvas {
   position: relative;
   z-index: 1;
@@ -39,7 +39,7 @@ canvas {
   outline: none;
 }
 
-/* HUD */
+/* 🧭 HUD */
 #hud {
   position: absolute;
   top: 10px;
@@ -47,9 +47,12 @@ canvas {
   z-index: 2;
   text-shadow: 2px 2px #000;
 }
-#score, #highscore { font-size: 18px; margin-bottom: 4px; }
+#score, #highscore {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
 
-/* Overlay (Start & Game Over) */
+/* 🟢 Overlay */
 .overlay {
   position: absolute;
   inset: 0;
@@ -65,8 +68,6 @@ canvas {
 }
 .overlay h1 { font-size: 40px; margin: 0; }
 .overlay p { opacity: 0.9; margin: 0 0 6px 0; }
-#startBtn { position: relative; z-index: 4; }
-
 button {
   padding: 10px 20px;
   font-size: 16px;
@@ -77,10 +78,9 @@ button {
   border-radius: 6px;
   font-weight: bold;
 }
-
 .hidden { display: none; }
 
-/* Enemy video (burung) */
+/* 🐦 Enemy Video */
 .enemy-video {
   position: absolute;
   z-index: 2;
