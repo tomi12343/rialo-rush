@@ -4,7 +4,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const bgVideo = document.getElementById("bg-video");
   const container = document.getElementById("game-container");
 
-  // UI Elements
+  // 🧭 UI
   const scoreText = document.getElementById("score");
   const highText = document.getElementById("highscore");
   const startOverlay = document.getElementById("start");
@@ -12,11 +12,19 @@ window.addEventListener("DOMContentLoaded", () => {
   const overlay = document.getElementById("overlay");
   const restartBtn = document.getElementById("restart");
 
-  // Player asset
+  // 🚀 Player
   const playerImg = new Image();
   playerImg.src = "assets/player.png";
 
-  // Game State
+  // 🎵 Backsound
+  const bgMusic = new Audio("assets/music.mp3");
+  bgMusic.loop = true;
+  bgMusic.volume = 0.6;
+
+  // 🔫 Efek Suara Tembakan
+  const gunSoundSrc = "assets/gun.wav";
+
+  // ⚙️ State
   let running = false;
   let gameOver = false;
   let score = 0;
@@ -30,33 +38,25 @@ window.addEventListener("DOMContentLoaded", () => {
 
   highText.textContent = `High Score: ${highScore}`;
 
-  // Controls
+  // 🎮 Controls
   const keys = {};
-  document.addEventListener(
-    "keydown",
-    (e) => {
-      if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
-      keys[e.code] = true;
-    },
-    { passive: false }
-  );
-  document.addEventListener(
-    "keyup",
-    (e) => {
-      if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
-      keys[e.code] = false;
-    },
-    { passive: false }
-  );
+  document.addEventListener("keydown", (e) => {
+    if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
+    keys[e.code] = true;
+  });
+  document.addEventListener("keyup", (e) => {
+    if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
+    keys[e.code] = false;
+  });
 
   function focusCanvas() {
     canvas.focus({ preventScroll: true });
   }
 
+  // ▶️ Start Game
   async function startGame() {
-    try {
-      await bgVideo.play();
-    } catch (_) {}
+    try { await bgVideo.play(); } catch (_) {}
+    try { await bgMusic.play(); } catch (_) {}
     startOverlay.classList.add("hidden");
     running = true;
     gameOver = false;
@@ -73,10 +73,12 @@ window.addEventListener("DOMContentLoaded", () => {
   startBtn.addEventListener("click", startGame);
   restartBtn.addEventListener("click", () => {
     overlay.classList.add("hidden");
+    bgMusic.currentTime = 0;
+    bgMusic.play().catch(() => {});
     startGame();
   });
 
-  // Auto Shooting
+  // 🔫 Auto Shooting
   function shoot() {
     bullets.push({
       x: player.x + player.w,
@@ -85,15 +87,19 @@ window.addEventListener("DOMContentLoaded", () => {
       h: 6,
       speed: 12,
     });
+
+    // 💥 Suara tembakan
+    const sfx = new Audio(gunSoundSrc);
+    sfx.volume = 0.7;
+    sfx.play().catch(() => {});
   }
 
-  // Spawn enemy video
+  // 🐦 Spawn Musuh (video burung)
   function spawnEnemy() {
     const y = Math.random() * (canvas.height - 100);
     const speed = 2 + Math.random() * 2;
-
     const el = document.createElement("video");
-    el.src = "assets/animation.gif.mp4";
+    el.src = "assets/enemy-bird.mp4";
     el.loop = true;
     el.muted = true;
     el.autoplay = true;
@@ -107,18 +113,19 @@ window.addEventListener("DOMContentLoaded", () => {
     enemies.push({ x: canvas.width, y, w: 60, h: 60, speed, el });
   }
 
+  // 🔁 Update
   function update() {
     if (!running || gameOver) return;
 
-    // Gerak player
+    // Gerakan Player
     if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
     if (keys["ArrowDown"] && player.y + player.h < canvas.height)
       player.y += player.speed;
 
-    // Auto shoot
+    // Auto Shoot
     if (shootCooldown <= 0) {
       shoot();
-      shootCooldown = 12; // delay antar peluru
+      shootCooldown = 12;
     }
     if (shootCooldown > 0) shootCooldown--;
 
@@ -126,7 +133,7 @@ window.addEventListener("DOMContentLoaded", () => {
     bullets.forEach((b) => (b.x += b.speed));
     bullets = bullets.filter((b) => b.x < canvas.width + 50);
 
-    // Spawn musuh video
+    // Spawn Musuh
     spawnTimer--;
     if (spawnTimer <= 0) {
       spawnEnemy();
@@ -143,10 +150,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // Collision
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
-
-      if (collide(player, e)) {
-        return endGame();
-      }
+      if (collide(player, e)) return endGame();
 
       for (let j = bullets.length - 1; j >= 0; j--) {
         const b = bullets[j];
@@ -167,6 +171,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // 🔍 Collision
   function collide(a, b) {
     return (
       a.x < b.x + b.w &&
@@ -176,13 +181,14 @@ window.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  // 🟥 Game Over
   function endGame() {
     gameOver = true;
     running = false;
     overlay.classList.remove("hidden");
-
     enemies.forEach((e) => e.el.remove());
     enemies = [];
+    bgMusic.pause();
 
     if (score > highScore) {
       highScore = score;
@@ -191,18 +197,16 @@ window.addEventListener("DOMContentLoaded", () => {
     highText.textContent = `High Score: ${highScore}`;
   }
 
+  // 🎨 Draw
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Player
     if (playerImg.complete)
       ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
-
-    // Peluru
     ctx.fillStyle = "#ff3333";
     bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
   }
 
+  // 🔁 Game Loop
   function loop() {
     update();
     draw();
