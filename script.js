@@ -33,37 +33,28 @@ window.addEventListener("DOMContentLoaded", () => {
   let shootCooldown = 0;
   let spawnTimer = 0;
 
-  // ⚡ Difficulty Scaling
+  // ⚡ Difficulty
   let level = 1;
   let speedMultiplier = 1.0;
-  let maxEnemies = 4;
+  let maxEnemies = 3; // awal 3 musuh
 
   const player = { x: 60, y: 380, w: 80, h: 80, speed: 6 };
   let bullets = [];
   let enemies = [];
 
   highText.textContent = `High Score: ${highScore}`;
-  levelText.textContent = `Level: 1`;
+  levelText.textContent = `Level: ${level}`;
 
   // Controls
   const keys = {};
-  document.addEventListener(
-    "keydown",
-    (e) => {
-      if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
-      keys[e.code] = true;
-    },
-    { passive: false }
-  );
-
-  document.addEventListener(
-    "keyup",
-    (e) => {
-      if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
-      keys[e.code] = false;
-    },
-    { passive: false }
-  );
+  document.addEventListener("keydown", (e) => {
+    if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
+    keys[e.code] = true;
+  }, { passive: false });
+  document.addEventListener("keyup", (e) => {
+    if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
+    keys[e.code] = false;
+  }, { passive: false });
 
   function focusCanvas() {
     canvas.focus({ preventScroll: true });
@@ -79,7 +70,7 @@ window.addEventListener("DOMContentLoaded", () => {
     score = 0;
     level = 1;
     speedMultiplier = 1.0;
-    maxEnemies = 4;
+    maxEnemies = 3;
     bullets = [];
     enemies.forEach((e) => e.el.remove());
     enemies = [];
@@ -87,7 +78,7 @@ window.addEventListener("DOMContentLoaded", () => {
     spawnTimer = 0;
 
     scoreText.textContent = "Score: 0";
-    levelText.textContent = "Level: 1";
+    levelText.textContent = `Level: ${level}`;
     highText.textContent = `High Score: ${highScore}`;
     focusCanvas();
   }
@@ -109,7 +100,6 @@ window.addEventListener("DOMContentLoaded", () => {
       h: 6,
       speed: 12,
     });
-
     const sfx = new Audio(gunSoundSrc);
     sfx.volume = 0.7;
     sfx.play().catch(() => {});
@@ -135,22 +125,7 @@ window.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // ⚡ Update Difficulty
-  function levelUp() {
-    level++;
-    speedMultiplier += 0.1; // musuh makin cepat
-    maxEnemies += 3; // tambah 3 musuh di layar
-    levelText.textContent = `Level: ${level}`;
-    levelUpSound.currentTime = 0;
-    levelUpSound.play().catch(() => {});
-    console.log(
-      `🔥 Level ${level}: speed x${speedMultiplier.toFixed(
-        2
-      )}, maxEnemies ${maxEnemies}`
-    );
-  }
-
-  // 🕹️ Update Game Logic
+  // 🕹️ Update
   function update() {
     if (!running || gameOver) return;
 
@@ -174,9 +149,7 @@ window.addEventListener("DOMContentLoaded", () => {
     spawnTimer--;
     if (spawnTimer <= 0) {
       spawnEnemy();
-      // spawn rate cepat kalau level tinggi
-      const spawnRate = Math.max(30, 120 - level * 10);
-      spawnTimer = spawnRate + Math.random() * 40;
+      spawnTimer = 80 + Math.random() * 40;
     }
 
     // Gerak Musuh
@@ -185,7 +158,7 @@ window.addEventListener("DOMContentLoaded", () => {
       e.el.style.left = `${e.x}px`;
     });
 
-    // Collision
+    // Collision Check
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
       if (collide(player, e)) return endGame();
@@ -199,16 +172,25 @@ window.addEventListener("DOMContentLoaded", () => {
           score++;
           scoreText.textContent = `Score: ${score}`;
 
-          // 🎯 Tiap 5 skor -> naik level
+          // ⚡ Level up tiap kelipatan 5
           if (score % 5 === 0) {
-            levelUp();
+            level++;
+            speedMultiplier += 0.1;
+            maxEnemies += 3;
+            levelText.textContent = `Level: ${level}`;
+            levelUpSound.currentTime = 0;
+            levelUpSound.play().catch(() => {});
+            console.log(
+              `🔥 Level ${level}: speed x${speedMultiplier.toFixed(
+                2
+              )}, maxEnemies ${maxEnemies}`
+            );
           }
 
           break;
         }
       }
 
-      // Hapus musuh keluar layar
       if (e.x + e.w < 0) {
         e.el.remove();
         enemies.splice(i, 1);
@@ -216,7 +198,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 🔲 Collision Check
   function collide(a, b) {
     return (
       a.x < b.x + b.w &&
@@ -226,7 +207,6 @@ window.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // 💀 Game Over
   function endGame() {
     gameOver = true;
     running = false;
@@ -242,7 +222,6 @@ window.addEventListener("DOMContentLoaded", () => {
     highText.textContent = `High Score: ${highScore}`;
   }
 
-  // 🎨 Draw Game
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (playerImg.complete)
@@ -251,11 +230,11 @@ window.addEventListener("DOMContentLoaded", () => {
     bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
   }
 
-  // 🔁 Game Loop
   function loop() {
     update();
     draw();
     requestAnimationFrame(loop);
   }
+
   loop();
 });
