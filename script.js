@@ -1,42 +1,77 @@
 window.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
+  const bgVideo = document.getElementById("bg-video");
 
-  // --- Load assets ---
-  const playerImg = new Image();
-  playerImg.src = "assets/player.png";
-
-  const enemyImg = new Image();
-  enemyImg.src = "assets/enemy.png";
-
-  // --- Game State ---
-  let player = { x: 60, y: 380, w: 80, h: 80, speed: 6 };
-  let bullets = [];
-  let enemies = [];
-  let score = 0;
-  let highScore = localStorage.getItem("rialo_high") || 0;
-  let gameOver = false;
-  let shootCooldown = 0;
-  let spawnTimer = 0;
-
-  // --- UI Elements ---
+  // UI
   const scoreText = document.getElementById("score");
   const highText = document.getElementById("highscore");
+  const startOverlay = document.getElementById("start");
+  const startBtn = document.getElementById("startBtn");
   const overlay = document.getElementById("overlay");
   const restartBtn = document.getElementById("restart");
 
+  // Assets
+  const playerImg = new Image();
+  playerImg.src = "assets/player.png";
+  const enemyImg = new Image();
+  enemyImg.src = "assets/enemy.png";
+
+  // State
+  let running = false;     // <- start screen menunggu user
+  let gameOver = false;
+  let score = 0;
+  let highScore = Number(localStorage.getItem("rialo_high") || 0);
+  let shootCooldown = 0;
+  let spawnTimer = 0;
+
+  const player = { x: 60, y: 380, w: 80, h: 80, speed: 6 };
+  let bullets = [];
+  let enemies = [];
+
   highText.textContent = `High Score: ${highScore}`;
 
-  // --- Controls ---
+  // Controls (gunakan e.code + cegah scroll)
   const keys = {};
   document.addEventListener("keydown", (e) => {
+    if (["Space", "ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
     keys[e.code] = true;
-  });
+  }, { passive: false });
+
   document.addEventListener("keyup", (e) => {
+    if (["Space", "ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
     keys[e.code] = false;
+  }, { passive: false });
+
+  // Fokuskan canvas saat start agar input diterima
+  function focusCanvas() {
+    canvas.focus({ preventScroll: true });
+  }
+
+  // Start by user gesture (fix autoplay/input focus)
+  async function startGame() {
+    try { await bgVideo.play(); } catch (_) { /* ignore */ }
+    startOverlay.classList.add("hidden");
+    running = true;
+    gameOver = false;
+    score = 0;
+    bullets = [];
+    enemies = [];
+    shootCooldown = 0;
+    spawnTimer = 0;
+    scoreText.textContent = "Score: 0";
+    focusCanvas();
+  }
+
+  startBtn.addEventListener("click", startGame);
+
+  // Restart
+  restartBtn.addEventListener("click", () => {
+    overlay.classList.add("hidden");
+    startGame();
   });
 
-  // --- Shooting ---
+  // Shooting
   function shoot() {
     bullets.push({
       x: player.x + player.w,
@@ -47,16 +82,16 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Enemy Spawn ---
+  // Spawn musuh
   function spawnEnemy() {
     const y = Math.random() * (canvas.height - 100);
     const speed = 3 + Math.random() * 2;
     enemies.push({ x: canvas.width + 40, y, w: 60, h: 60, speed });
   }
 
-  // --- Update Logic ---
+  // Update
   function update() {
-    if (gameOver) return;
+    if (!running || gameOver) return;
 
     // Gerak player
     if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
@@ -66,32 +101,29 @@ window.addEventListener("DOMContentLoaded", () => {
     // Nembak (Space)
     if (keys["Space"] && shootCooldown <= 0) {
       shoot();
-      shootCooldown = 10; // cooldown ~0.16s
+      shootCooldown = 10; // ~0.16s
     }
     if (shootCooldown > 0) shootCooldown--;
 
-    // Update peluru
+    // Peluru
     bullets.forEach((b) => (b.x += b.speed));
     bullets = bullets.filter((b) => b.x < canvas.width + 50);
 
-    // Spawn musuh
+    // Musuh
     spawnTimer--;
     if (spawnTimer <= 0) {
       spawnEnemy();
       spawnTimer = 60 + Math.random() * 60;
     }
-
-    // Update musuh
     enemies.forEach((e) => (e.x -= e.speed));
 
-    // Cek tabrakan
+    // Collision
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
 
       // Player vs musuh
       if (collide(player, e)) {
-        endGame();
-        return;
+        return endGame();
       }
 
       // Peluru vs musuh
@@ -106,12 +138,11 @@ window.addEventListener("DOMContentLoaded", () => {
         }
       }
 
-      // Hapus musuh keluar layar
+      // Off-screen cleanup
       if (e.x + e.w < 0) enemies.splice(i, 1);
     }
   }
 
-  // --- Collision Check ---
   function collide(a, b) {
     return (
       a.x < b.x + b.w &&
@@ -121,30 +152,19 @@ window.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // --- Game Over ---
   function endGame() {
     gameOver = true;
+    running = false;
     overlay.classList.remove("hidden");
 
     if (score > highScore) {
       highScore = score;
-      localStorage.setItem("rialo_high", highScore);
+      localStorage.setItem("rialo_high", String(highScore));
     }
     highText.textContent = `High Score: ${highScore}`;
   }
 
-  // --- Restart ---
-  restartBtn.addEventListener("click", () => {
-    score = 0;
-    bullets = [];
-    enemies = [];
-    player.y = 380;
-    gameOver = false;
-    overlay.classList.add("hidden");
-    scoreText.textContent = "Score: 0";
-  });
-
-  // --- Draw ---
+  // Draw
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -153,8 +173,8 @@ window.addEventListener("DOMContentLoaded", () => {
       ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
     }
 
-    // Peluru
-    ctx.fillStyle = "#ff3333"; // merah terang, kontras di video
+    // Peluru (warna kontras)
+    ctx.fillStyle = "#ff3333";
     bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
 
     // Musuh
@@ -163,12 +183,19 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // --- Game Loop ---
-  function gameLoop() {
+  // Loop
+  function loop() {
     update();
     draw();
-    requestAnimationFrame(gameLoop);
+    requestAnimationFrame(loop);
   }
+  loop();
 
-  gameLoop();
+  // Klik di mana saja juga bisa start (kalau mau cepat)
+  document.addEventListener("click", (e) => {
+    if (!running && startOverlay && !startOverlay.classList.contains("hidden")) {
+      // biar hanya tombol Start yang trigger, boleh kamu hapus block ini kalau mau start di klik mana saja
+      // startGame();
+    }
+  });
 });
