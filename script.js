@@ -47,14 +47,23 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Controls
   const keys = {};
-  document.addEventListener("keydown", (e) => {
-    if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
-    keys[e.code] = true;
-  });
-  document.addEventListener("keyup", (e) => {
-    if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
-    keys[e.code] = false;
-  });
+  document.addEventListener(
+    "keydown",
+    (e) => {
+      if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
+      keys[e.code] = true;
+    },
+    { passive: false }
+  );
+
+  document.addEventListener(
+    "keyup",
+    (e) => {
+      if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
+      keys[e.code] = false;
+    },
+    { passive: false }
+  );
 
   function focusCanvas() {
     canvas.focus({ preventScroll: true });
@@ -79,6 +88,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     scoreText.textContent = "Score: 0";
     levelText.textContent = "Level: 1";
+    highText.textContent = `High Score: ${highScore}`;
     focusCanvas();
   }
 
@@ -90,6 +100,7 @@ window.addEventListener("DOMContentLoaded", () => {
     startGame();
   });
 
+  // 🔫 Auto Shooting
   function shoot() {
     bullets.push({
       x: player.x + player.w,
@@ -98,15 +109,15 @@ window.addEventListener("DOMContentLoaded", () => {
       h: 6,
       speed: 12,
     });
+
     const sfx = new Audio(gunSoundSrc);
     sfx.volume = 0.7;
     sfx.play().catch(() => {});
   }
 
+  // 🐦 Spawn Enemy
   function spawnEnemy() {
-    // Pastikan jumlah musuh tidak lebih dari maxEnemies
     if (enemies.length >= maxEnemies) return;
-
     const y = Math.random() * (canvas.height - 100);
     const baseSpeed = 2 + Math.random() * 2;
     const speed = baseSpeed * speedMultiplier;
@@ -124,28 +135,26 @@ window.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  function updateDifficulty() {
-    // Tiap 5 skor → level naik
-    const newLevel = Math.floor(score / 5) + 1;
-    if (newLevel > level) {
-      level = newLevel;
-      speedMultiplier = 1.0 + (level - 1) * 0.1;
-      maxEnemies = 4 + (level - 1);
-      levelText.textContent = `Level: ${level}`;
-      levelUpSound.currentTime = 0;
-      levelUpSound.play().catch(() => {});
-      console.log(
-        `⚡ Level ${level} | speed x${speedMultiplier.toFixed(
-          2
-        )} | maxEnemies ${maxEnemies}`
-      );
-    }
+  // ⚡ Update Difficulty
+  function levelUp() {
+    level++;
+    speedMultiplier += 0.1; // musuh makin cepat
+    maxEnemies += 3; // tambah 3 musuh di layar
+    levelText.textContent = `Level: ${level}`;
+    levelUpSound.currentTime = 0;
+    levelUpSound.play().catch(() => {});
+    console.log(
+      `🔥 Level ${level}: speed x${speedMultiplier.toFixed(
+        2
+      )}, maxEnemies ${maxEnemies}`
+    );
   }
 
+  // 🕹️ Update Game Logic
   function update() {
     if (!running || gameOver) return;
 
-    // Player Movement
+    // Gerak Player
     if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
     if (keys["ArrowDown"] && player.y + player.h < canvas.height)
       player.y += player.speed;
@@ -157,9 +166,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }
     shootCooldown--;
 
-    // Update Difficulty Live
-    updateDifficulty();
-
     // Bullets
     bullets.forEach((b) => (b.x += b.speed));
     bullets = bullets.filter((b) => b.x < canvas.width + 50);
@@ -168,18 +174,18 @@ window.addEventListener("DOMContentLoaded", () => {
     spawnTimer--;
     if (spawnTimer <= 0) {
       spawnEnemy();
-      // spawn lebih cepat saat level tinggi
-      const spawnRate = Math.max(40, 120 - level * 5);
+      // spawn rate cepat kalau level tinggi
+      const spawnRate = Math.max(30, 120 - level * 10);
       spawnTimer = spawnRate + Math.random() * 40;
     }
 
-    // Gerak musuh
+    // Gerak Musuh
     enemies.forEach((e) => {
       e.x -= e.speed;
       e.el.style.left = `${e.x}px`;
     });
 
-    // Cek tabrakan
+    // Collision
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
       if (collide(player, e)) return endGame();
@@ -192,11 +198,17 @@ window.addEventListener("DOMContentLoaded", () => {
           bullets.splice(j, 1);
           score++;
           scoreText.textContent = `Score: ${score}`;
+
+          // 🎯 Tiap 5 skor -> naik level
+          if (score % 5 === 0) {
+            levelUp();
+          }
+
           break;
         }
       }
 
-      // Hapus musuh yang keluar layar
+      // Hapus musuh keluar layar
       if (e.x + e.w < 0) {
         e.el.remove();
         enemies.splice(i, 1);
@@ -204,6 +216,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  // 🔲 Collision Check
   function collide(a, b) {
     return (
       a.x < b.x + b.w &&
@@ -213,6 +226,7 @@ window.addEventListener("DOMContentLoaded", () => {
     );
   }
 
+  // 💀 Game Over
   function endGame() {
     gameOver = true;
     running = false;
@@ -228,6 +242,7 @@ window.addEventListener("DOMContentLoaded", () => {
     highText.textContent = `High Score: ${highScore}`;
   }
 
+  // 🎨 Draw Game
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (playerImg.complete)
@@ -236,11 +251,11 @@ window.addEventListener("DOMContentLoaded", () => {
     bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
   }
 
+  // 🔁 Game Loop
   function loop() {
     update();
     draw();
     requestAnimationFrame(loop);
   }
-
   loop();
 });
