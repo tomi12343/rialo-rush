@@ -32,7 +32,7 @@ body {
   object-fit: cover;
   filter: brightness(0.9);
   z-index: 0;
-  pointer-events: none; /* biar klik tembus ke tombol */
+  pointer-events: none;
 }
 
 /* 🎮 Canvas */
@@ -87,9 +87,10 @@ button {
   color: #000;
   border-radius: 6px;
   font-weight: bold;
+  transition: 0.1s;
 }
 button:active {
-  transform: scale(0.96);
+  transform: scale(0.95);
 }
 .hidden { display: none; }
 
@@ -103,12 +104,12 @@ button:active {
   pointer-events: none;
 }
 
-/* 📱 On-screen Controls (PC & HP) */
+/* 🎮 Simple On-screen Controls */
 #mobile-controls {
   position: absolute;
   bottom: 20px;
   right: 20px;
-  z-index: 99; /* di atas canvas dan overlay */
+  z-index: 10;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -127,15 +128,15 @@ button:active {
   cursor: pointer;
   box-shadow: 0 4px 6px rgba(0,0,0,0.4);
   pointer-events: auto;
-  touch-action: manipulation; /* hilangkan delay tap di HP */
+  touch-action: manipulation;
 }
 
 #mobile-controls button:active {
-  transform: scale(0.92);
+  transform: scale(0.9);
   background: #00ff88;
 }
 
-/* Responsif */
+/* Responsif: layar HP penuh */
 @media (max-width: 768px), (orientation: portrait) {
   #game-container {
     width: 100vw;
