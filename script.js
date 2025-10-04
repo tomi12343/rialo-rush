@@ -1,8 +1,8 @@
 window.addEventListener("DOMContentLoaded", () => {
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
-  const bgVideo = document.getElementById("bg-video");
   const container = document.getElementById("game-container");
+  const bgVideo = document.getElementById("bg-video");
 
   // UI
   const scoreText = document.getElementById("score");
@@ -12,18 +12,17 @@ window.addEventListener("DOMContentLoaded", () => {
   const overlay = document.getElementById("overlay");
   const restartBtn = document.getElementById("restart");
 
-  // Player
+  // Assets
   const playerImg = new Image();
   playerImg.src = "assets/player.png";
 
-  // Audio
   const bgMusic = new Audio("assets/music.mp3");
   bgMusic.loop = true;
   bgMusic.volume = 0.6;
 
-  const gunSoundSrc = "assets/gun.wav"; // sfx tembakan
+  const gunSoundSrc = "assets/gun.wav";
 
-  // State
+  // Game state
   let running = false;
   let gameOver = false;
   let score = 0;
@@ -33,37 +32,29 @@ window.addEventListener("DOMContentLoaded", () => {
 
   const player = { x: 60, y: 380, w: 80, h: 80, speed: 6 };
   let bullets = [];
-  let enemies = []; // { x,y,w,h,speed, el }
+  let enemies = [];
 
   highText.textContent = `High Score: ${highScore}`;
 
-  // Controls
   const keys = {};
   document.addEventListener("keydown", (e) => {
     if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
     keys[e.code] = true;
-  }, { passive: false });
+  });
   document.addEventListener("keyup", (e) => {
     if (["ArrowUp", "ArrowDown"].includes(e.code)) e.preventDefault();
     keys[e.code] = false;
-  }, { passive: false });
+  });
 
   function focusCanvas() {
     canvas.focus({ preventScroll: true });
   }
 
-  // Start game (safe autoplay handling)
+  // 🎮 Start game
   async function startGame() {
-    // sembunyikan overlay dulu (klik user sudah terjadi)
     startOverlay.classList.add("hidden");
-
-    // coba play media, tapi jangan hentikan game kalau gagal
-    try { await bgVideo.play(); } catch (err) {
-      console.warn("Video autoplay gagal:", err);
-    }
-    try { await bgMusic.play(); } catch (err) {
-      console.warn("Backsound gagal diputar (perlu gesture user):", err);
-    }
+    try { await bgVideo.play(); } catch (e) { console.warn("BG video autoplay blocked"); }
+    try { await bgMusic.play(); } catch (e) { console.warn("Music autoplay blocked"); }
 
     running = true;
     gameOver = false;
@@ -74,12 +65,10 @@ window.addEventListener("DOMContentLoaded", () => {
     shootCooldown = 0;
     spawnTimer = 0;
     scoreText.textContent = "Score: 0";
-
     focusCanvas();
   }
 
   startBtn.addEventListener("click", startGame);
-
   restartBtn.addEventListener("click", () => {
     overlay.classList.add("hidden");
     bgMusic.currentTime = 0;
@@ -87,7 +76,6 @@ window.addEventListener("DOMContentLoaded", () => {
     startGame();
   });
 
-  // Shooting
   function shoot() {
     bullets.push({
       x: player.x + player.w,
@@ -96,14 +84,13 @@ window.addEventListener("DOMContentLoaded", () => {
       h: 6,
       speed: 12,
     });
-    // sound effect
     const sfx = new Audio(gunSoundSrc);
     sfx.volume = 0.7;
     sfx.play().catch(() => {});
   }
 
-  // Spawn musuh (video burung)
   function spawnEnemy() {
+    if (enemies.length > 6) return; // limit jumlah musuh agar gak lag
     const y = Math.random() * (canvas.height - 100);
     const speed = 2 + Math.random() * 2;
 
@@ -125,43 +112,38 @@ window.addEventListener("DOMContentLoaded", () => {
   function update() {
     if (!running || gameOver) return;
 
-    // Gerak player
+    // Player movement
     if (keys["ArrowUp"] && player.y > 0) player.y -= player.speed;
     if (keys["ArrowDown"] && player.y + player.h < canvas.height) player.y += player.speed;
 
     // Auto shoot
     if (shootCooldown <= 0) {
       shoot();
-      shootCooldown = 12; // semakin kecil semakin cepat
+      shootCooldown = 12;
     }
-    if (shootCooldown > 0) shootCooldown--;
+    shootCooldown--;
 
     // Bullets
     bullets.forEach((b) => (b.x += b.speed));
     bullets = bullets.filter((b) => b.x < canvas.width + 50);
 
-    // Spawn musuh
+    // Spawn enemy
     spawnTimer--;
     if (spawnTimer <= 0) {
       spawnEnemy();
       spawnTimer = 90 + Math.random() * 60;
     }
 
-    // Update posisi musuh
     enemies.forEach((e) => {
       e.x -= e.speed;
       e.el.style.left = `${e.x}px`;
-      e.el.style.top = `${e.y}px`;
     });
 
     // Collision
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
-
-      // Player vs musuh
       if (collide(player, e)) return endGame();
 
-      // Peluru vs musuh
       for (let j = bullets.length - 1; j >= 0; j--) {
         const b = bullets[j];
         if (collide(b, e)) {
@@ -173,8 +155,6 @@ window.addEventListener("DOMContentLoaded", () => {
           break;
         }
       }
-
-      // Hapus musuh yang lewat
       if (e.x + e.w < 0) {
         e.el.remove();
         enemies.splice(i, 1);
@@ -183,23 +163,16 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   function collide(a, b) {
-    return (
-      a.x < b.x + b.w &&
-      a.x + a.w > b.x &&
-      a.y < b.y + b.h &&
-      a.y + a.h > b.y
-    );
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
   }
 
   function endGame() {
     gameOver = true;
     running = false;
     overlay.classList.remove("hidden");
-
     enemies.forEach((e) => e.el.remove());
     enemies = [];
     bgMusic.pause();
-
     if (score > highScore) {
       highScore = score;
       localStorage.setItem("rialo_high", String(highScore));
@@ -209,13 +182,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-    // Player
-    if (playerImg.complete) {
-      ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
-    }
-
-    // Peluru
+    if (playerImg.complete) ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
     ctx.fillStyle = "#ff3333";
     bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
   }
@@ -225,5 +192,6 @@ window.addEventListener("DOMContentLoaded", () => {
     draw();
     requestAnimationFrame(loop);
   }
+
   loop();
 });
