@@ -1,12 +1,13 @@
 body {
   margin: 0;
-  background: #222;
+  padding: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   height: 100vh;
-  font-family: 'Press Start 2P', sans-serif;
-  color: white;
+  background: #1a1a1a;
+  font-family: monospace;
+  color: #fff;
 }
 
 #game-container {
@@ -15,43 +16,53 @@ body {
 
 canvas {
   border: 2px solid #333;
+  display: block;
   background: url('assets/background.png') no-repeat center center;
   background-size: cover;
 }
 
-#score, #highscore {
+#hud {
   position: absolute;
   top: 10px;
   left: 10px;
-  font-size: 14px;
-  text-shadow: 1px 1px #000;
+  text-shadow: 2px 2px #000;
 }
 
-#highscore {
-  top: 30px;
+#score, #highscore {
+  font-size: 18px;
+  margin-bottom: 4px;
 }
 
-#game-over {
+#overlay {
   position: absolute;
-  top: 40%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  text-align: center;
-  background: rgba(0, 0, 0, 0.8);
-  padding: 20px;
-  border-radius: 8px;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+}
+
+#overlay h1 {
+  font-size: 40px;
+  margin: 0;
+}
+
+#overlay button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border: none;
+  background: #00ff88;
+  color: #000;
+  border-radius: 6px;
+  font-weight: bold;
 }
 
 .hidden {
   display: none;
-}
-
-button {
-  background: #fff;
-  border: none;
-  padding: 8px 16px;
-  font-size: 12px;
-  margin-top: 10px;
-  cursor: pointer;
-  border-radius: 4px;
 }
