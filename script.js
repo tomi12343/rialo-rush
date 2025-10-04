@@ -71,12 +71,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
   async function startGame() {
     startOverlay.classList.add("hidden");
-    try {
-      await bgVideo.play();
-    } catch (_) {}
-    try {
-      await bgMusic.play();
-    } catch (_) {}
+    try { await bgVideo.play(); } catch (_) {}
+    try { await bgMusic.play(); } catch (_) {}
 
     running = true;
     gameOver = false;
@@ -120,9 +116,9 @@ window.addEventListener("DOMContentLoaded", () => {
     sfx.play().catch(() => {});
   }
 
-  // 🐦 Spawn Enemy (GIF)
+  // 🐦 Spawn Enemy
   function spawnEnemy() {
-    if (enemies.length >= maxEnemies) return; // batasi jumlah musuh
+    if (enemies.length >= maxEnemies) return;
     const y = Math.random() * (canvas.height - 100);
     const baseSpeed = 2 + Math.random() * 2;
     const speed = baseSpeed * speedMultiplier;
@@ -140,7 +136,7 @@ window.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // 🕹️ Update Game Logic
+  // 🕹️ Update
   function update() {
     if (!running || gameOver) return;
 
@@ -173,7 +169,7 @@ window.addEventListener("DOMContentLoaded", () => {
       e.el.style.left = `${e.x}px`;
     });
 
-    // Collision Detection
+    // Collision
     for (let i = enemies.length - 1; i >= 0; i--) {
       const e = enemies[i];
       if (collide(player, e)) return endGame();
@@ -187,11 +183,11 @@ window.addEventListener("DOMContentLoaded", () => {
           score++;
           scoreText.textContent = `Score: ${score}`;
 
-          // ⚡ Difficulty Scaling tiap 10 skor
-          if (score % 10 === 0) {
+          // ⚡ Scaling tiap 5 skor
+          if (score % 5 === 0) {
             level++;
-            speedMultiplier += 0.1; // tambah 10% kecepatan
-            maxEnemies += 1; // tambah musuh maksimal
+            speedMultiplier += 0.1;
+            maxEnemies += 1;
             levelText.textContent = `Level: ${level}`;
             levelUpSound.currentTime = 0;
             levelUpSound.play().catch(() => {});
@@ -213,7 +209,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 🧱 Collision Box
+  // Collision Box
   function collide(a, b) {
     return (
       a.x < b.x + b.w &&
@@ -223,7 +219,7 @@ window.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // 🔴 Game Over
+  // Game Over
   function endGame() {
     gameOver = true;
     running = false;
@@ -239,7 +235,7 @@ window.addEventListener("DOMContentLoaded", () => {
     highText.textContent = `High Score: ${highScore}`;
   }
 
-  // 🎨 Draw Player & Bullets
+  // Draw
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     if (playerImg.complete)
@@ -248,7 +244,7 @@ window.addEventListener("DOMContentLoaded", () => {
     bullets.forEach((b) => ctx.fillRect(b.x, b.y, b.w, b.h));
   }
 
-  // 🔁 Main Loop
+  // Loop
   function loop() {
     update();
     draw();
